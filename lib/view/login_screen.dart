@@ -16,9 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     final String? message = ModalRoute.of(context)?.settings.arguments as String?;
-    
     if (message != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
@@ -31,14 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         final response = await _apiService.login(_email, _password);
         final prefs = await SharedPreferences.getInstance();
-
         await prefs.setString('auth_token', response['token']);
+        await prefs.setString('user_name', response['user']['name']);
+        await prefs.setString('user_email', response['user']['email']);
         Navigator.pushReplacementNamed(context, '/tarefas');
-        
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao fazer login: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao fazer login: $e')));
       }
     }
   }
@@ -46,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text('Login'), elevation: 0),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Form(
@@ -54,24 +50,27 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
                 validator: (value) => value!.isEmpty ? 'Informe o email' : null,
                 onChanged: (value) => _email = value,
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 16),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Senha'),
+                decoration: InputDecoration(labelText: 'Senha', border: OutlineInputBorder()),
                 obscureText: true,
                 validator: (value) => value!.isEmpty ? 'Informe a senha' : null,
                 onChanged: (value) => _password = value,
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _login,
                 child: Text('Entrar'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
+                style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
+              ),
+              SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/register'),
+                child: Text('Registrar', style: TextStyle(color: Colors.blue)),
               ),
             ],
           ),
