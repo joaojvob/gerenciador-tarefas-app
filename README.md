@@ -1,17 +1,43 @@
-# app_tarefas
+# app_tarefas_frontend
 
-A new Flutter project.
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev) [![Dart](https://img.shields.io/badge/Dart-2.12+-brightgreen.svg)](https://dart.dev)
 
-## Getting Started
+Um aplicativo Flutter para gerenciamento de tarefas, integrado a uma API RESTful. Permite criar, editar, excluir e visualizar tarefas com uma interface intuitiva e responsiva.
 
-This project is a starting point for a Flutter application.
+## Sobre o Projeto
+Este é o frontend de um sistema de gerenciamento de tarefas desenvolvido com Flutter. Ele se conecta a um backend Laravel via API para oferecer funcionalidades como autenticação de usuários, listagem de tarefas e atualização de perfil.
 
-A few resources to get you started if this is your first Flutter project:
+## Funcionalidades
+- **Autenticação**:
+  - Login e registro de usuários.
+  - Logout seguro com remoção de token local.
+- **Gerenciamento de Tarefas**:
+  - Criar, editar e excluir tarefas.
+  - Listagem de tarefas com ordenação por `ordem`.
+  - Sincronização manual com o backend.
+- **Interface**:
+  - Design responsivo com tema personalizado (gradientes, sombras).
+  - Modal interativo para tarefas.
+  - Cores indicativas para prioridade (vermelho: alta, laranja: média, verde: baixa).
+- **Perfil**:
+  - Exibição de nome e email.
+  - Atualização de senha.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Tecnologias
+- **Flutter**: 3.0+ (Material 3)
+- **Dart**: 2.12+
+- **Dependências**:
+  - `http: ^1.2.1` - Requisições HTTP.
+  - `shared_preferences: ^2.2.3` - Armazenamento local.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# gerenciaroTarefasAPP
+## Configuração
+### Pré-requisitos
+- Flutter SDK instalado ([Guia de Instalação](https://flutter.dev/docs/get-started/install)).
+- Emulador Android/iOS ou dispositivo físico.
+- Editor (ex.: VS Code ou Android Studio).
+
+### Passos
+1. **Clone o Repositório**:
+   ```bash
+   git clone https://github.com/seu-usuario/app_tarefas_frontend.git
+   cd app_tarefas_frontend
