@@ -1,3 +1,4 @@
+import 'package:app_tarefas/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:app_tarefas/view/login_screen.dart';
 import 'package:app_tarefas/view/tela_tarefas.dart';
@@ -5,7 +6,12 @@ import 'package:app_tarefas/view/register_screen.dart';
 import 'package:app_tarefas/view/profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final apiService = ApiService();
+  bool isLoggedIn = await apiService.isTokenValid();
+  // await ApiService().clearToken(); 
+  
   runApp(MeuApp());
 }
 

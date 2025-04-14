@@ -3,6 +3,7 @@ import 'package:app_tarefas/services/api_service.dart';
 import 'package:app_tarefas/models/tarefas.dart';
 import 'package:app_tarefas/view/tarefa_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_tarefas/services/export_service.dart';
 
 class TelaTarefas extends StatefulWidget {
   @override
@@ -11,6 +12,7 @@ class TelaTarefas extends StatefulWidget {
 
 class _TelaTarefasState extends State<TelaTarefas> {
   final ApiService api = ApiService();
+  final ExportService exportService = ExportService();
   List<Tarefa> tarefas = [];
   bool isLoading = false;
 
@@ -21,70 +23,110 @@ class _TelaTarefasState extends State<TelaTarefas> {
   }
 
   void _carregarTarefas() async {
-    setState(() => isLoading = true);
-    try {
-      tarefas = await api.buscarTarefas();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-    setState(() => isLoading = false);
+      setState(() => isLoading = true);
+      
+      try {
+          tarefas = await api.buscarTarefas();
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Tarefas carregadas com sucesso!'),
+                  backgroundColor: Colors.green,
+              ),
+          );
+      } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(e.toString()),
+                  backgroundColor: Colors.red,
+              ),
+          );
+      }
+      setState(() => isLoading = false);
   }
 
   void _mostrarFormulario([Tarefa? tarefa]) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => TarefaForm(
-        tarefa: tarefa,
-        onSave: (novaTarefa) async {
-          try {
-            if (tarefa == null) {
-              await api.criarTarefa(novaTarefa);
-            } else {
-              novaTarefa = Tarefa(
-                id: tarefa.id,
-                titulo: novaTarefa.titulo,
-                descricao: novaTarefa.descricao,
-                dataVencimento: novaTarefa.dataVencimento,
-                prioridade: novaTarefa.prioridade,
-                status: novaTarefa.status,
-                ordem: novaTarefa.ordem,
-                userId: tarefa.userId,
-              );
-              await api.atualizarTarefa(novaTarefa);
-            }
-            _carregarTarefas();
-            Navigator.pop(context);
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-          }
-        },
-      ),
-    );
+      showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) => TarefaForm(
+              tarefa: tarefa,
+              onSave: (novaTarefa) async {
+                  try {
+                      if (tarefa == null) {
+                          await api.criarTarefa(novaTarefa);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Tarefa criada com sucesso!'),
+                                  backgroundColor: Colors.green,
+                              ),
+                          );
+                      } else {
+                          novaTarefa = Tarefa(
+                              id: tarefa.id,
+                              titulo: novaTarefa.titulo,
+                              descricao: novaTarefa.descricao,
+                              dataVencimento: novaTarefa.dataVencimento,
+                              prioridade: novaTarefa.prioridade,
+                              status: novaTarefa.status,
+                              ordem: novaTarefa.ordem,
+                              userId: tarefa.userId,
+                          );
+                          await api.atualizarTarefa(novaTarefa);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Tarefa atualizada com sucesso!'),
+                                  backgroundColor: Colors.green,
+                              ),
+                          );
+                      }
+                      _carregarTarefas();
+                      Navigator.pop(context);
+                  } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(e.toString()),
+                              backgroundColor: Colors.red,
+                          ),
+                      );
+                  }
+              },
+          ),
+      );
   }
 
   void _excluirTarefa(int id) async {
     bool? confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Excluir Tarefa'),
-        content: Text('Deseja realmente excluir esta tarefa?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Excluir', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+        context: context,
+        builder: (context) => AlertDialog(
+            title: Text('Excluir Tarefa'),
+            content: Text('Deseja realmente excluir esta tarefa?'),
+            actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar')),
+                TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text('Excluir', style: TextStyle(color: Colors.red)),
+                ),
+            ],
+        ),
     );
 
     if (confirm == true) {
-      try {
-        await api.excluirTarefa(id);
-        _carregarTarefas();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        try {
+            await api.excluirTarefa(id);
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Tarefa excluída com sucesso!'),
+                    backgroundColor: Colors.green,
+                ),
+            );
+            _carregarTarefas();
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              backgroundColor: Colors.red,
+            ),
+          );
       }
     }
   }
@@ -116,6 +158,54 @@ class _TelaTarefasState extends State<TelaTarefas> {
     }
   }
 
+  void _mostrarOpcoesExportacao() {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Exportar Relatório'),
+          content: Text('Escolha o formato para exportar suas tarefas:'),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await exportService.exportToPdf(tarefas);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('PDF gerado com sucesso!'), backgroundColor: Colors.green),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao gerar PDF: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              },
+              child: Text('PDF'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await exportService.exportToCsv(tarefas);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('CSV gerado com sucesso!'), backgroundColor: Colors.green),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao gerar CSV: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              },
+              child: Text('CSV'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar'),
+            ),
+          ],
+        ),
+      );
+    }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,6 +217,11 @@ class _TelaTarefasState extends State<TelaTarefas> {
             icon: Icon(Icons.sync, color: Colors.white),
             onPressed: _carregarTarefas,
             tooltip: 'Sincronizar',
+          ),
+               IconButton(
+            icon: Icon(Icons.download, color: Colors.white),  
+            onPressed: _mostrarOpcoesExportacao,
+            tooltip: 'Exportar Relatório',
           ),
           IconButton(
             icon: Icon(Icons.person, color: Colors.white),
@@ -163,7 +258,7 @@ class _TelaTarefasState extends State<TelaTarefas> {
                             if (tarefa.descricao != null) Text(tarefa.descricao!, style: TextStyle(color: Colors.grey[600])),
                             Text('Vencimento: ${tarefa.dataVencimento?.toString().substring(0, 16) ?? 'Não definido'}'),
                             Text('Prioridade: ${tarefa.prioridade ?? 'media'}', style: TextStyle(color: _getPrioridadeColor(tarefa.prioridade))),
-                            Text('Status: ${tarefa.status ?? 'pendente'}'),
+                            Text('Status: ${tarefa.status ?? 'Pendente'}'),
                             Text('Ordem: ${tarefa.ordem ?? 'Não definida'}'),
                           ],
                         ),
@@ -176,7 +271,7 @@ class _TelaTarefasState extends State<TelaTarefas> {
                             ),
                             IconButton(
                               icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _excluirTarefa(tarefa.id),
+                              onPressed: () => _excluirTarefa(tarefa.id!),
                             ),
                           ],
                         ),

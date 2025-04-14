@@ -26,27 +26,25 @@ class _TarefaFormState extends State<TarefaForm> {
     titulo = widget.tarefa?.titulo ?? '';
     descricao = widget.tarefa?.descricao;
     dataVencimento = widget.tarefa?.dataVencimento;
-    // Garante que prioridade seja um valor válido ou 'media'
-    prioridade = _normalizePrioridade(widget.tarefa?.prioridade) ?? 'media';
-    // Garante que status seja um valor válido ou 'pendente'
-    status = _normalizeStatus(widget.tarefa?.status) ?? 'pendente';
+    prioridade = _normalizePrioridade(widget.tarefa?.prioridade) ?? 'Media';
+    status = _normalizeStatus(widget.tarefa?.status) ?? 'Pendente';
     ordem = widget.tarefa?.ordem;
   }
 
   String? _normalizePrioridade(String? value) {
-    const validValues = ['baixa', 'media', 'alta'];
-    if (value != null && validValues.contains(value.toLowerCase())) {
-      return value.toLowerCase();
+    const validValues = ['Baixa', 'Media', 'Alta'];
+    if (value != null && validValues.contains(value)) {
+      return value;
     }
-    return null; // Retorna null se não for válido, permitindo o valor padrão
+    return 'Media';
   }
 
   String? _normalizeStatus(String? value) {
-    const validValues = ['pendente', 'em_andamento', 'concluida'];
-    if (value != null && validValues.contains(value.toLowerCase())) {
-      return value.toLowerCase();
+    const validValues = ['Pendente', 'Em Andamento', 'Concluida', 'Cancelada'];
+    if (value != null && validValues.contains(value)) {
+      return value;
     }
-    return null; // Retorna null se não for válido, permitindo o valor padrão
+    return 'Pendente';
   }
 
   @override
@@ -75,6 +73,7 @@ class _TarefaFormState extends State<TarefaForm> {
                 initialValue: descricao,
                 decoration: InputDecoration(labelText: 'Descrição', border: OutlineInputBorder()),
                 maxLines: 3,
+                maxLength: 500,
                 onChanged: (value) => descricao = value,
               ),
               SizedBox(height: 8),
@@ -114,15 +113,21 @@ class _TarefaFormState extends State<TarefaForm> {
               DropdownButtonFormField<String>(
                 value: prioridade,
                 decoration: InputDecoration(labelText: 'Prioridade', border: OutlineInputBorder()),
-                items: ['baixa', 'media', 'alta'].map((value) => DropdownMenuItem(value: value, child: Text(value.capitalize()))).toList(),
+                items: ['Baixa', 'Media', 'Alta']
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                    .toList(),
                 onChanged: (value) => setState(() => prioridade = value),
+                validator: (value) => value == null ? 'Selecione uma prioridade' : null,
               ),
               SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: status,
                 decoration: InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
-                items: ['pendente', 'em_andamento', 'concluida'].map((value) => DropdownMenuItem(value: value, child: Text(value.replaceAll('_', ' ').capitalize()))).toList(),
+                items: ['Pendente', 'Em Andamento', 'Concluida', 'Cancelada']
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
+                    .toList(),
                 onChanged: (value) => setState(() => status = value),
+                validator: (value) => value == null ? 'Selecione um status' : null,
               ),
               SizedBox(height: 8),
               TextFormField(
@@ -135,13 +140,14 @@ class _TarefaFormState extends State<TarefaForm> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
                     widget.onSave(Tarefa(
                       id: widget.tarefa?.id ?? 0,
                       titulo: titulo,
                       descricao: descricao,
                       dataVencimento: dataVencimento,
-                      prioridade: prioridade,
-                      status: status,
+                      prioridade: prioridade ?? 'Media',
+                      status: status ?? 'Pendente',
                       ordem: ordem,
                       userId: widget.tarefa?.userId ?? 0,
                     ));
