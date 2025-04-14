@@ -11,150 +11,217 @@ class ApiService {
     return prefs.getString('auth_token');
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await http.post(Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+  String _parseErrorMessage(String responseBody) {
+    try {
+      final jsonResponse = jsonDecode(responseBody);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final prefs = await SharedPreferences.getInstance();
+      if (jsonResponse['errors'] != null) {
+        final errors = jsonResponse['errors'] as Map<String, dynamic>;
+        return errors.values.where((value) => value != null).join(' ');
+      }
 
-      await prefs.setString('auth_token', data['token']);
-    
-      return data;
+      return jsonResponse['message'] ?? 'Ocorreu um erro inesperado.';
+    } catch (e) {
+
+      return 'Ocorreu um erro inesperado.';
     }
+  }
 
-    throw Exception('Erro ao fazer login: ${response.body}');
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+
+        await prefs.setString('auth_token', data['token']);
+        return data;
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+
+      throw Exception('Erro ao fazer login: ${e.toString().replaceFirst('Exception: ', '')}');
+    }
   }
 
   Future<void> register(String name, String email, String password, String passwordConfirmation) async {
-    final response = await http.post(Uri.parse('$baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        }),
+      );
 
-    if (response.statusCode != 201) {
-      throw Exception('Erro ao registrar: ${response.body}');
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+
+        await prefs.setString('auth_token', data['token']);
+
+        return;
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao registrar: ${e.toString().replaceFirst('Exception: ', '')}');
     }
-
-    final data = jsonDecode(response.body);
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString('auth_token', data['token']);
   }
 
   Future<void> logout() async {
-    final token    = await _getToken();
-    final response = await http.post(Uri.parse('$baseUrl/logout'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final token = await _getToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao fazer logout: ${response.body}');
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+        
+        return;
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao fazer logout: ${e.toString().replaceFirst('Exception: ', '')}');
     }
   }
 
   Future<void> updatePassword(String currentPassword, String newPassword, String newPasswordConfirmation) async {
-    final token = await _getToken();
-    final response = await http.patch(
-      Uri.parse('$baseUrl/update-password'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'current_password': currentPassword,
-        'password': newPassword,
-        'password_confirmation': newPasswordConfirmation,
-      }),
-    );
+    try {
+      final token = await _getToken();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/update-password'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'password': newPassword,
+          'password_confirmation': newPasswordConfirmation,
+        }),
+      );
 
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao atualizar senha: ${response.body}');
+      if (response.statusCode == 200) {
+        return;
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao atualizar senha: ${e.toString().replaceFirst('Exception: ', '')}');
     }
   }
 
   Future<List<Tarefa>> buscarTarefas() async {
-    final token = await _getToken();
-    
-    if (token == null) {
-      throw Exception('Token de autenticação não encontrado. Faça login novamente.');
-    }
+    try {
+      final token = await _getToken();
+      
+      if (token == null) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
 
-    final response = await http.get(Uri.parse('$baseUrl/tarefas'),
-      headers: {
-        'Authorization': 'Bearer $token', 
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',  
-      },
-    );
-    
-    if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
-      final List<dynamic> tarefasJson = jsonResponse['data'];
+      final response = await http.get(
+        Uri.parse('$baseUrl/tarefas'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
 
-      return tarefasJson.map((json) => Tarefa.fromJson(json)).toList();
-    } else {
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final List<dynamic> tarefasJson = jsonResponse['data'];
+        return tarefasJson.map((json) => Tarefa.fromJson(json)).toList();
+      }
 
-      throw Exception('Erro ao carregar tarefas: ${response.statusCode} - ${response.body}');
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao carregar tarefas: ${e.toString().replaceFirst('Exception: ', '')}');
     }
   }
 
   Future<Tarefa> criarTarefa(Tarefa tarefa) async {
-    final token    = await _getToken();
-    final response = await http.post(Uri.parse('$baseUrl/tarefas'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(tarefa.toJson()),
-    );
+    try {
+      final token = await _getToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/tarefas'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(tarefa.toJson()),
+      );
 
-    if (response.statusCode == 201) {
-      return Tarefa.fromJson(jsonDecode(response.body));
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return Tarefa.fromJson(responseData['data'] ?? responseData);
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao criar tarefa: ${e.toString().replaceFirst('Exception: ', '')}');
     }
-
-    throw Exception('Erro ao criar tarefa: ${response.body}');
   }
 
   Future<Tarefa> atualizarTarefa(Tarefa tarefa) async {
-    final token    = await _getToken();
-    final response = await http.patch(Uri.parse('$baseUrl/tarefas/${tarefa.id}'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(tarefa.toJson()),
-    );
+    try {
+      final token = await _getToken();
+      final response = await http.patch(
+        Uri.parse('$baseUrl/tarefas/${tarefa.id}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(tarefa.toJson()),
+      );
 
-    if (response.statusCode == 200) {
-      return Tarefa.fromJson(jsonDecode(response.body));
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return Tarefa.fromJson(responseData['data'] ?? responseData);
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao atualizar tarefa: ${e.toString().replaceFirst('Exception: ', '')}');
     }
-
-    throw Exception('Erro ao atualizar tarefa: ${response.body}');
   }
 
   Future<void> excluirTarefa(int id) async {
-    final token    = await _getToken();
-    final response = await http.delete(Uri.parse('$baseUrl/tarefas/$id'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final token = await _getToken();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/tarefas/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode != 200) {
-      throw Exception('Erro ao excluir tarefa: ${response.body}');
+      if (response.statusCode == 200) {
+        return;
+      }
+
+      throw Exception(_parseErrorMessage(response.body));
+    } catch (e) {
+      throw Exception('Erro ao excluir tarefa: ${e.toString().replaceFirst('Exception: ', '')}');
     }
   }
 
@@ -169,7 +236,8 @@ class ApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/tarefas'),
+      final response = await http.get(
+        Uri.parse('$baseUrl/tarefas'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
